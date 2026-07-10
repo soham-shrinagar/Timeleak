@@ -1,0 +1,16 @@
+{
+  "name": "timeleak-victim-server",
+  "version": "1.0.0",
+  "description": "Educational timing side-channel vulnerability demonstration server",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": ["timing-attack", "security", "education"],
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.21.2",
+    "morgan": "^1.10.0"
+  }
+}
