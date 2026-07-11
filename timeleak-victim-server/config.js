@@ -17,6 +17,11 @@ module.exports = {
   // The loop variant leaks more timing signal because it explicitly stops at first mismatch.
   NAIVE_COMPARISON_MODE: process.env.NAIVE_COMPARISON_MODE || 'loop',
 
+  // Busy-wait per successfully matched character in loop mode (microseconds).
+  // Real string compares are nanoseconds — too small to measure over HTTP without
+  // amplification. This makes the side-channel observable in the network demo.
+  COMPARE_DELAY_US: parseInt(process.env.COMPARE_DELAY_US, 10) || 1000,
+
   // Rate limiting as defense-in-depth (does not fix the crypto bug, only slows attackers).
   RATE_LIMIT_ENABLED: process.env.RATE_LIMIT_ENABLED === 'true' || false,
   RATE_LIMIT_MAX_PER_SECOND: parseInt(process.env.RATE_LIMIT_MAX_PER_SECOND, 10) || 10,

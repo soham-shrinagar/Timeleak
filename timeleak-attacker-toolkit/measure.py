@@ -18,6 +18,7 @@ def measure_timing(
     samples: int = 300,
     warmup: int = 10,
     timeout: float = 10.0,
+    session: Optional[requests.Session] = None,
 ) -> np.ndarray:
     """
     Measure response latency for repeated POST requests with the same token guess.
@@ -25,10 +26,15 @@ def measure_timing(
     Returns an array of timings in milliseconds (one per sample).
     Warm-up requests are sent first (untimed) to avoid cold-start contamination
     from DNS, TCP handshake, and server JIT warm-up.
+
+    Pass a shared `session` when comparing candidates at the same position so
+    TCP state does not skew relative rankings.
     """
     url = base_url.rstrip('/') + endpoint
     payload = {'token': token}
-    session = requests.Session()
+    own_session = session is None
+    if own_session:
+        session = requests.Session()
 
     for _ in range(warmup):
         try:

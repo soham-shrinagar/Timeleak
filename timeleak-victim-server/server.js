@@ -26,6 +26,7 @@ app.listen(config.PORT, () => {
   console.log(`Listening on http://localhost:${config.PORT}`);
   console.log(`Secret length: ${config.SECRET_LENGTH}`);
   console.log(`Naive comparison mode: ${config.NAIVE_COMPARISON_MODE}`);
+  console.log(`Compare delay (loop mode): ${config.COMPARE_DELAY_US}µs per matched char`);
   console.log(`Simulate jitter: ${config.SIMULATE_JITTER} (max ${config.JITTER_MAX_MS}ms)`);
   console.log(`Rate limit: ${config.RATE_LIMIT_ENABLED ? config.RATE_LIMIT_MAX_PER_SECOND + '/s' : 'disabled'}`);
   console.log('');

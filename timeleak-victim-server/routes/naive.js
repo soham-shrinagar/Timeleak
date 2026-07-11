@@ -26,6 +26,17 @@ function compareEquals(guess, secret) {
 }
 
 /**
+ * Busy-wait for a given number of microseconds (amplifies per-char timing leak).
+ */
+function burnMicroseconds(us) {
+  if (us <= 0) return;
+  const end = process.hrtime.bigint() + BigInt(us * 1000);
+  while (process.hrtime.bigint() < end) {
+    // Intentional spin — included in request handling time.
+  }
+}
+
+/**
  * Manual char-by-char loop with early exit on first mismatch.
  * This is the classic textbook-vulnerable pattern: comparison time is
  * proportional to the number of matching prefix bytes.
@@ -34,6 +45,7 @@ function compareLoop(guess, secret) {
   if (guess.length !== secret.length) return false;
   for (let i = 0; i < secret.length; i++) {
     if (guess[i] !== secret[i]) return false;
+    burnMicroseconds(config.COMPARE_DELAY_US);
   }
   return true;
 }

@@ -7,7 +7,6 @@ pure CPU-level timing signal. Useful as a sanity check before network attacks.
 
 import csv
 import os
-import random
 import string
 import time
 from datetime import datetime, timezone
@@ -67,7 +66,7 @@ def measure_local(
 
 def build_guess(prefix: str, candidate: str, total_length: int) -> str:
     remaining = total_length - len(prefix) - 1
-    padding = ''.join(random.choices(ALPHABET, k=remaining)) if remaining > 0 else ''
+    padding = 'A' * remaining if remaining > 0 else ''
     return prefix + candidate + padding
 
 

