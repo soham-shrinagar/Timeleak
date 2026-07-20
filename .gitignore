@@ -1,20 +1,20 @@
 # Personal reference guide (not for the repo)
 guide.md
 
-# Node
+# Dependencies / build outputs
 node_modules/
-
-# Python
 __pycache__/
 *.py[cod]
 .venv/
 venv/
+
+# Generated experiment artifacts
+timeleak-victim-server/logs/requests.log
+timeleak-attacker-toolkit/results/*
+!timeleak-attacker-toolkit/results/.gitkeep
 
 # OS / editor
 .DS_Store
 Thumbs.db
 .idea/
 .vscode/
-
-# Runtime logs (regenerated locally)
-timeleak-victim-server/logs/requests.log
