@@ -90,18 +90,18 @@ def rank_candidates(
 def adaptive_distinguish(
     samples_a: np.ndarray,
     samples_b: np.ndarray,
-    collect_more_fn,
+    collect_more_a,
+    collect_more_b,
     initial_samples: int = 300,
     max_samples: int = 2000,
     p_threshold: float = 0.05,
     batch_size: int = 100,
 ) -> Tuple[np.ndarray, np.ndarray, float, bool]:
     """
-    Adaptively increase sample size until top two candidates are statistically
-    distinguishable (p < p_threshold) or max_samples is reached.
+    Adaptively increase sample size until two timing distributions are
+    statistically distinguishable (p < p_threshold) or max_samples is reached.
 
-    collect_more_fn(candidate_key) -> additional samples array
-    Here samples_a/samples_b are for the two leading candidates.
+    collect_more_a(n) / collect_more_b(n) -> additional sample arrays of size n.
 
     Returns (final_a, final_b, p_value, conclusive).
     """
@@ -112,15 +112,17 @@ def adaptive_distinguish(
         _, p = welch_ttest(a, b)
         if p < p_threshold and len(a) >= initial_samples:
             return a, b, p, True
-        if len(a) >= max_samples:
-            break
 
-        # Collect more for both
-        need = min(batch_size, max_samples - len(a))
+        need = min(batch_size, max_samples - len(a), max_samples - len(b))
         if need <= 0:
             break
-        # Caller provides keys via closure; we append externally in attack.py
-        break
+
+        extra_a = np.asarray(collect_more_a(need), dtype=np.float64)
+        extra_b = np.asarray(collect_more_b(need), dtype=np.float64)
+        if len(extra_a) > 0:
+            a = np.concatenate([a, extra_a])
+        if len(extra_b) > 0:
+            b = np.concatenate([b, extra_b])
 
     _, p = welch_ttest(a, b)
     conclusive = p < p_threshold

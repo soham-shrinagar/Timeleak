@@ -1,0 +1,20 @@
+# Personal reference guide (not for the repo)
+guide.md
+
+# Node
+node_modules/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Runtime logs (regenerated locally)
+timeleak-victim-server/logs/requests.log

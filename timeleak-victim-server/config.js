@@ -25,4 +25,8 @@ module.exports = {
   // Rate limiting as defense-in-depth (does not fix the crypto bug, only slows attackers).
   RATE_LIMIT_ENABLED: process.env.RATE_LIMIT_ENABLED === 'true' || false,
   RATE_LIMIT_MAX_PER_SECOND: parseInt(process.env.RATE_LIMIT_MAX_PER_SECOND, 10) || 10,
+
+  // Attack surface note: network attacks hit this server over HTTP (loopback or remote).
+  // In-process CPU-only attacks use timeleak-attacker-toolkit/local_variant.py instead —
+  // compare sample counts between both modes in your report.
 };
